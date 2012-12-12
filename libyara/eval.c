@@ -441,7 +441,7 @@ long long evaluate(TERM* term, EVALUATION_CONTEXT* context)
         }
 
     case TERM_TYPE_STRING_EQUALS:
-	return strcmp(term_string_operation->variable->string, term_string_operation->string);
+	return strcmp(term_string_operation->variable->string, term_string_operation->string) == 0;
         
     case TERM_TYPE_STRING_MATCH:
         rc = regex_exec(&(term_string_operation->re),
