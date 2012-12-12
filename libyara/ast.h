@@ -215,6 +215,7 @@ typedef struct _TERM_STRING_OPERATION
 {
     int        type;
     VARIABLE*  variable;
+    int        compare_modifier;
    
     union {
         REGEXP              re;

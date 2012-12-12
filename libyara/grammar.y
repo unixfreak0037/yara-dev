@@ -126,6 +126,7 @@ POSSIBILITY OF SUCH DAMAGE.
 %type <meta> meta_declarations
 
 %type <integer> string_modifier
+%type <integer> string_compare_modifier
 %type <integer> string_modifiers
 
 %type <integer> rule_modifier
@@ -245,7 +246,8 @@ TERM* reduce_identifier( yyscan_t yyscanner,
 TERM* reduce_string_operation(  yyscan_t yyscanner,
                                 int type,
                                 char* identifier,
-                                SIZED_STRING* string);
+                                SIZED_STRING* string,
+                                int string_compare_modifier);
                                         
 TERM* reduce_integer_enumeration(   yyscan_t yyscanner,
                                     TERM* vector,     
@@ -458,9 +460,9 @@ boolean_expression : _TRUE_                                 { $$ = reduce_consta
                             YYERROR;
                         }
                      }
-                   | _IDENTIFIER_ _MATCHES_ _REGEXP_                                   
+                   | _IDENTIFIER_ _MATCHES_ _REGEXP_ string_compare_modifier
                      { 
-                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_MATCH, $1, $3);
+                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_MATCH, $1, $3, $4);
                         
                         if ($$ == NULL)
                         {
@@ -468,9 +470,9 @@ boolean_expression : _TRUE_                                 { $$ = reduce_consta
                             YYERROR;
                         }
                      }
-                   | _IDENTIFIER_ _CONTAINS_ _TEXTSTRING_                                   
+                   | _IDENTIFIER_ _CONTAINS_ _TEXTSTRING_ string_compare_modifier
                      { 
-                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_CONTAINS, $1, $3);
+                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_CONTAINS, $1, $3, $4);
                         
                         if ($$ == NULL)
                         {
@@ -478,9 +480,9 @@ boolean_expression : _TRUE_                                 { $$ = reduce_consta
                             YYERROR;
                         }
                      }
-                   | _IDENTIFIER_ _EQUALS_ _TEXTSTRING_                                   
+                   | _IDENTIFIER_ _EQUALS_ _TEXTSTRING_ string_compare_modifier
                      { 
-                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_EQUALS, $1, $3);
+                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_EQUALS, $1, $3, $4);
                         
                         if ($$ == NULL)
                         {
@@ -586,8 +588,12 @@ boolean_expression : _TRUE_                                 { $$ = reduce_consta
                    | expression _IS_ expression                         { $$ = reduce_term(yyscanner, TERM_TYPE_EQ, $1, $3, NULL); }
                    | expression _NEQ_ expression                        { $$ = reduce_term(yyscanner, TERM_TYPE_NOT_EQ, $1, $3, NULL); }
                    ;    
- 
- 
+
+string_compare_modifier :       { $$ = 0; } // no modifiers at all
+		| _WIDE_        { $$ = STRING_FLAGS_WIDE; }
+                | _ASCII_       { $$ = STRING_FLAGS_ASCII; }
+                | _NOCASE_      { $$ = STRING_FLAGS_NO_CASE; }
+                ;
  
 integer_set : '(' integer_enumeration ')'                               { $$ = $2; }
             | range                                                     { $$ = $1; }
@@ -1197,7 +1203,8 @@ TERM* reduce_string_enumeration(    yyscan_t yyscanner,
 TERM* reduce_string_operation( yyscan_t yyscanner,
                                         int type,
                                         char* identifier,
-                                        SIZED_STRING* string)
+                                        SIZED_STRING* string,
+                                        int string_compare_modifier)
 {
     YARA_CONTEXT* context = yyget_extra(yyscanner);
    
@@ -1218,12 +1225,13 @@ TERM* reduce_string_operation( yyscan_t yyscanner,
             {
                 term->type = type;
                 term->variable = variable;
+                term->compare_modifier = string_compare_modifier;
                 
                 if (type == TERM_TYPE_STRING_MATCH)
                 {
                     if (regex_compile(&(term->re),
                                       string->c_string,
-                                      FALSE,
+                                      string_compare_modifier == STRING_FLAGS_NO_CASE,
                                       context->last_error_extra_info,
                                       sizeof(context->last_error_extra_info),
                                       &erroffset) <= 0)
