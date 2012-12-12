@@ -95,6 +95,7 @@ POSSIBILITY OF SUCH DAMAGE.
 %token _UINT32_
 %token _MATCHES_
 %token _CONTAINS_
+%token _EQUALS_
 %token _INDEX_
 
 %token _MZ_
@@ -470,6 +471,16 @@ boolean_expression : _TRUE_                                 { $$ = reduce_consta
                    | _IDENTIFIER_ _CONTAINS_ _TEXTSTRING_                                   
                      { 
                         $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_CONTAINS, $1, $3);
+                        
+                        if ($$ == NULL)
+                        {
+                            yyerror(yyscanner, NULL);
+                            YYERROR;
+                        }
+                     }
+                   | _IDENTIFIER_ _EQUALS_ _TEXTSTRING_                                   
+                     { 
+                        $$ = reduce_string_operation(yyscanner, TERM_TYPE_STRING_EQUALS, $1, $3);
                         
                         if ($$ == NULL)
                         {

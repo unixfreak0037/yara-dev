@@ -439,6 +439,9 @@ long long evaluate(TERM* term, EVALUATION_CONTEXT* context)
         {
             return term_variable->variable->integer;
         }
+
+    case TERM_TYPE_STRING_EQUALS:
+	return strcmp(term_string_operation->variable->string, term_string_operation->string);
         
     case TERM_TYPE_STRING_MATCH:
         rc = regex_exec(&(term_string_operation->re),
