@@ -441,7 +441,10 @@ long long evaluate(TERM* term, EVALUATION_CONTEXT* context)
         }
 
     case TERM_TYPE_STRING_EQUALS:
-	return strcmp(term_string_operation->variable->string, term_string_operation->string) == 0;
+        if (term_string_operation->compare_modifier == STRING_FLAGS_NO_CASE) 
+            return strcasecmp(term_string_operation->variable->string, term_string_operation->string) == 0;
+        else
+            return strcmp(term_string_operation->variable->string, term_string_operation->string) == 0;
         
     case TERM_TYPE_STRING_MATCH:
         rc = regex_exec(&(term_string_operation->re),
@@ -451,8 +454,10 @@ long long evaluate(TERM* term, EVALUATION_CONTEXT* context)
         return (rc >= 0);
 
 	case TERM_TYPE_STRING_CONTAINS:
-		
-		return (strstr(term_string_operation->variable->string, term_string_operation->string) != NULL);
+        if (term_string_operation->compare_modifier == STRING_FLAGS_NO_CASE) 
+            return (strcasestr(term_string_operation->variable->string, term_string_operation->string) != NULL);
+        else
+            return (strstr(term_string_operation->variable->string, term_string_operation->string) != NULL);
      	
 	default:
 		return 0;
