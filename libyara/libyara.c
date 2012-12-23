@@ -501,7 +501,7 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
     // if all the preconditions failed then we're done
     if (all_preconditions_failed)
     {
-        printf("all preconditions failed\n");
+        //printf("all preconditions failed\n");
         return ERROR_SUCCESS;
     }
 	

@@ -651,7 +651,7 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
     // then nothing can possibly match
     if (string->rule->flags & RULE_FLAGS_FAILED_PRECONDITION)
     {
-        printf("skipping string %s in rule %s\n", string->identifier, string->rule->identifier);
+        //printf("skipping string %s in rule %s\n", string->identifier, string->rule->identifier);
         return 0;
     }
     
