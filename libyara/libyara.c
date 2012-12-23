@@ -65,6 +65,9 @@ YARA_CONTEXT* yr_create_context()
     memset(context->rule_list.hash_table, 0, sizeof(context->rule_list.hash_table));
     memset(context->hash_table.hashed_strings_2b, 0, sizeof(context->hash_table.hashed_strings_2b));
     memset(context->hash_table.hashed_strings_1b, 0, sizeof(context->hash_table.hashed_strings_1b));
+
+    // initialize predefined variables
+    yr_define_string_variable(context, PREDEFINED_VAR_FILE_PATH, "");
     
     return context;
     
@@ -667,6 +670,7 @@ int yr_scan_file(const char* file_path, YARA_CONTEXT* context, YARACALLBACK call
 	
 	if (result == ERROR_SUCCESS)
 	{
+        yr_define_string_variable(context, PREDEFINED_VAR_FILE_PATH, file_path);
 		result = yr_scan_mem(mfile.data, mfile.size, context, callback, user_data);		
 		unmap_file(&mfile);
 	}

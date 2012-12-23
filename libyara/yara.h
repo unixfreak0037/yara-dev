@@ -114,6 +114,8 @@ limitations under the License.
 #define CALLBACK_ABORT                          1
 #define CALLBACK_ERROR                          2 
 
+#define PREDEFINED_VAR_FILE_PATH                "file_path"
+
 typedef struct _MATCH
 {   
     size_t          offset;
