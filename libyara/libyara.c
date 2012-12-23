@@ -68,6 +68,7 @@ YARA_CONTEXT* yr_create_context()
 
     // initialize predefined variables
     yr_define_string_variable(context, PREDEFINED_VAR_FILE_PATH, "");
+    yr_define_boolean_variable(context, PREDEFINED_VAR_IS_EXECUTABLE, 0);
     
     return context;
     
@@ -483,6 +484,8 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	
     is_executable = is_pe(block->data, block->size) || is_elf(block->data, block->size) || context->scanning_process_memory;
     is_file = !context->scanning_process_memory;
+
+    yr_define_boolean_variable(context, PREDEFINED_VAR_IS_EXECUTABLE, is_executable);
 
 	clear_marks(&context->rule_list);
 

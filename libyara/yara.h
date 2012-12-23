@@ -115,6 +115,7 @@ limitations under the License.
 #define CALLBACK_ERROR                          2 
 
 #define PREDEFINED_VAR_FILE_PATH                "file_path"
+#define PREDEFINED_VAR_IS_EXECUTABLE            "is_executable"
 
 typedef struct _MATCH
 {   
