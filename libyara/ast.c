@@ -126,7 +126,7 @@ VARIABLE* lookup_variable(VARIABLE* variable_list_head, const char* identifier)
 }
 
 
-int new_rule(RULE_LIST* rules, char* identifier, NAMESPACE* ns, int flags, TAG* tag_list_head, META* meta_list_head, STRING* string_list_head, TERM* condition)
+int new_rule(RULE_LIST* rules, char* identifier, NAMESPACE* ns, int flags, TAG* tag_list_head, META* meta_list_head, STRING* string_list_head, TERM* precondition, TERM* condition)
 {
     RULE* new_rule;
     RULE_LIST_ENTRY* entry;
@@ -146,6 +146,7 @@ int new_rule(RULE_LIST* rules, char* identifier, NAMESPACE* ns, int flags, TAG* 
 			new_rule->tag_list_head = tag_list_head;
             new_rule->meta_list_head = meta_list_head;
             new_rule->string_list_head = string_list_head;
+            new_rule->precondition = precondition;
             new_rule->condition = condition;
             new_rule->next = NULL;
             

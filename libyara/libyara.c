@@ -460,6 +460,7 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	unsigned int i;	
 	int is_executable;
     int is_file;
+    int all_preconditions_failed = TRUE;
 	
 	RULE* rule;
 	NAMESPACE* ns;
@@ -467,7 +468,7 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	
 	if (block->size < 2)
         return ERROR_SUCCESS;
-	
+
 	if (!context->hash_table.populated)
 	{
         populate_hash_table(&context->hash_table, &context->rule_list);
@@ -481,6 +482,28 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
     is_file = !context->scanning_process_memory;
 
 	clear_marks(&context->rule_list);
+
+    // evaluate precondition for each rule
+	rule = context->rule_list.head;
+    while (rule != NULL)
+    {
+        if (rule->precondition != NULL)
+            if (evaluate(rule->precondition, &eval_context) == 0) 
+                rule->flags |= RULE_FLAGS_FAILED_PRECONDITION;
+            else
+                all_preconditions_failed = FALSE;
+        else
+            all_preconditions_failed = FALSE;
+
+        rule = rule->next;
+    }
+
+    // if all the preconditions failed then we're done
+    if (all_preconditions_failed)
+    {
+        printf("all preconditions failed\n");
+        return ERROR_SUCCESS;
+    }
 	
 	while (block != NULL)
 	{
@@ -549,24 +572,27 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	{	
 		if (rule->flags & RULE_FLAGS_GLOBAL)
 		{
-            eval_context.rule = rule;
-            
-            if (evaluate(rule->condition, &eval_context))
-    		{
-                rule->flags |= RULE_FLAGS_MATCH;
-    		}
-    		else
-    		{
-                rule->ns->global_rules_satisfied = FALSE;
-    		}
-    		
-    		if (!(rule->flags & RULE_FLAGS_PRIVATE))
-    		{
-        		if (callback(rule, user_data) != 0)
-        		{
-                    return ERROR_CALLBACK_ERROR;
-        		}
-		    }
+            if (! (rule->flags & RULE_FLAGS_FAILED_PRECONDITION))
+            {
+                eval_context.rule = rule;
+                
+                if (evaluate(rule->condition, &eval_context))
+                {
+                    rule->flags |= RULE_FLAGS_MATCH;
+                }
+                else
+                {
+                    rule->ns->global_rules_satisfied = FALSE;
+                }
+                
+                if (!(rule->flags & RULE_FLAGS_PRIVATE))
+                {
+                    if (callback(rule, user_data) != 0)
+                    {
+                        return ERROR_CALLBACK_ERROR;
+                    }
+                }
+            }
 		}
 			
 		rule = rule->next;
@@ -579,11 +605,13 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	while (rule != NULL)
 	{
 		/* 
-		   skip global rules, privates rules, and rules that don't need to be
-		   evaluated due to some global rule unsatisfied in it's namespace
+		   skip global rules, privates rules, rules that don't need to be
+		   evaluated due to some global rule unsatisfied in it's namespace,
+           and rules that have failed the precondition
 		*/
 		
-		if (rule->flags & RULE_FLAGS_GLOBAL || rule->flags & RULE_FLAGS_PRIVATE || !rule->ns->global_rules_satisfied)  
+		if (rule->flags & RULE_FLAGS_GLOBAL || rule->flags & RULE_FLAGS_PRIVATE || !rule->ns->global_rules_satisfied
+            || rule->flags & RULE_FLAGS_FAILED_PRECONDITION)  
 		{
 			rule = rule->next;
 			continue;

@@ -57,6 +57,7 @@ POSSIBILITY OF SUCH DAMAGE.
 %token _GLOBAL_
 %token _META_
 %token <string> _STRINGS_
+%token _PRECONDITION_
 %token _CONDITION_
 %token _END_
 %token <c_string> _IDENTIFIER_
@@ -144,6 +145,7 @@ POSSIBILITY OF SUCH DAMAGE.
 %type <term> string_enumeration
 %type <term> integer_enumeration
 %type <term> string_enumeration_item
+%type <term> precondition
 %type <term> condition
 %type <term> range
 
@@ -172,6 +174,7 @@ int reduce_rule_declaration(    yyscan_t yyscanner,
                                 TAG* tag_list_head, 
                                 META* meta_list_head,
                                 STRING* string_list_head, 
+                                TERM* precondition,
                                 TERM* condition);
                             
 TAG* reduce_tags(   yyscan_t yyscanner,
@@ -274,9 +277,9 @@ rules :  /* empty */
       | rules error 'include' /* .. or include statement */
       ;
 
-rule    :   rule_modifiers _RULE_ _IDENTIFIER_ tags '{' meta strings condition '}'    
+rule    :   rule_modifiers _RULE_ _IDENTIFIER_ tags '{' meta strings precondition condition '}'    
             { 
-                if (reduce_rule_declaration(yyscanner, $3,$1,$4,$6,$7,$8) != ERROR_SUCCESS)
+                if (reduce_rule_declaration(yyscanner, $3,$1,$4,$6,$7,$8,$9) != ERROR_SUCCESS)
                 {
                     yyerror(yyscanner, NULL);
                     YYERROR; 
@@ -292,6 +295,10 @@ strings   : /* empty */                               { $$ = NULL; }
           | _STRINGS_ ':' string_declarations         { $$ = $3; }
           ;
         
+precondition : /* empty */                            { $$ = NULL; }
+          | _PRECONDITION_ ':' boolean_expression     { $$ = $3; }
+          ;
+
 condition : _CONDITION_ ':' boolean_expression        { $$ = $3; }
           ;
         
@@ -740,6 +747,7 @@ int reduce_rule_declaration(    yyscan_t yyscanner,
                                 TAG* tag_list_head,
                                 META* meta_list_head,
                                 STRING* string_list_head, 
+                                TERM* precondition,
                                 TERM* condition
                             )
 {
@@ -753,6 +761,7 @@ int reduce_rule_declaration(    yyscan_t yyscanner,
                                     tag_list_head, 
                                     meta_list_head, 
                                     string_list_head, 
+                                    precondition,
                                     condition);
                                         
     if (context->last_result != ERROR_SUCCESS)
@@ -771,6 +780,9 @@ int reduce_rule_declaration(    yyscan_t yyscanner,
                 strncpy(context->last_error_extra_info, string->identifier, sizeof(context->last_error_extra_info));
                 break;
             }
+
+            // remember what rule a string belongs to
+            string->rule = context->rule_list.tail;
             
             string = string->next;
         }

@@ -63,6 +63,7 @@ limitations under the License.
 #define RULE_FLAGS_GLOBAL                       0x04
 #define RULE_FLAGS_REQUIRE_EXECUTABLE           0x08
 #define RULE_FLAGS_REQUIRE_FILE                 0x10
+#define RULE_FLAGS_FAILED_PRECONDITION          0x20
 
 #ifndef ERROR_SUCCESS 
 #define ERROR_SUCCESS                           0
@@ -130,6 +131,7 @@ typedef struct _REGEXP
     
 } REGEXP;
 
+struct _RULE;
 
 typedef struct _STRING
 {
@@ -146,6 +148,9 @@ typedef struct _STRING
     MATCH*          matches_head;
     MATCH*          matches_tail;      
     struct _STRING* next;
+
+    // the rule the string belongs to
+    struct _RULE* rule; 
     
 } STRING;
 
@@ -214,6 +219,7 @@ typedef struct _RULE
     STRING*         string_list_head;
     TAG*            tag_list_head;
     META*           meta_list_head;
+    TERM*           precondition;
     TERM*           condition;
     struct _RULE*   next;
     

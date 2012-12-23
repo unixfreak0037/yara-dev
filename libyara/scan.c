@@ -612,6 +612,7 @@ void clear_marks(RULE_LIST* rule_list)
     while (rule != NULL)
     {    
         rule->flags &= ~RULE_FLAGS_MATCH;
+        rule->flags &= ~RULE_FLAGS_FAILED_PRECONDITION;
         string = rule->string_list_head;
         
         while (string != NULL)
@@ -645,6 +646,14 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
     
     unsigned char tmp_buffer[512];
     unsigned char* tmp;
+
+    // if the precondition failed for the rule this string is in
+    // then nothing can possibly match
+    if (string->rule->flags & RULE_FLAGS_FAILED_PRECONDITION)
+    {
+        printf("skipping string %s in rule %s\n", string->identifier, string->rule->identifier);
+        return 0;
+    }
     
     if (IS_HEX(string))
     {
