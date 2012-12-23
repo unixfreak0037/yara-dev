@@ -14,26 +14,35 @@ set cpo&vim
 " yara keywords
 syntax keyword yaraReserved all and any ascii at condition contians entrypoint equals false filesize fullword for global in include index indexes int8 int16 int32 matches meta nocase not or of private rule rva section strings them true uint8 uint16 uint32 wide
 
+syntax keyword yaraRuleSections meta strings precondition condition
+
 " string identifiers
 " TODO should only work inside strings and condition section
-syntax match yaraStringIdentifier /\$[a-zA-Z0-9_]*/
+syntax match yaraStringIdentifier /\$[a-zA-Z0-9_]*/ nextGroup=yaraStringEquals
+syntax match yaraStringEquals /\s*=\s*/ nextGroup=yaraString,yaraHexString,yaraRegexString
 
 " comments
 " TODO not inside strings
 syntax match yaraComment /\/\/.*/
+syntax region yaraMultiLineComment start=/\/\*/ end=/\*\//
 
 " strings
-syntax region yaraString start=/"/ end=/"/ skip=/\\"/
+syntax region yaraString start=/"/ end=/"/ skip=/\\"/ contained
 
 " hex strings
-" TODO only inside strings section
-syntax region yaraHexString start=/{/ end=/}/
+syntax region yaraHexString start=/{/ end=/}/ contained
+
+" regex
+syntax region yaraRegexString start=/\// end=/\// skip=/\\\// contained
 
 highlight link yaraReserved Statement
 highlight link yaraStringIdentifier Identifier
 highlight link yaraComment Comment
+highlight link yaraMultiLineComment Comment
 highlight link yaraString Constant
 highlight link yaraHexString Constant
+highlight link yaraRegexString Constant
+highlight link yaraRuleSections PreProc
 
 let b:current_syntax = "yara"
 
