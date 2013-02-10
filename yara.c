@@ -45,6 +45,7 @@ int show_specified_tags = FALSE;
 int show_specified_rules = FALSE;
 int show_strings = FALSE;
 int show_meta = FALSE;
+int show_statistics = FALSE;
 int negate = FALSE;
 int count = 0;
 int limit = 0;
@@ -74,6 +75,7 @@ void show_help()
 	printf("  -g                        print tags.\n");
 	printf("  -m                        print metadata.\n");
 	printf("  -s                        print matching strings.\n");
+	printf("  -S                        print statistics.\n");
 	printf("  -l <number>               abort scanning after a <number> of rules matched.\n");
 	printf("  -d <identifier>=<value>   define external variable.\n");
     printf("  -r                        recursively search directories.\n");
@@ -404,7 +406,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
     IDENTIFIER* identifier;
 	opterr = 0;
  
-	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:f")) != -1)
+	while ((c = getopt (argc, (char**) argv, "rnsSvgml:t:i:d:f")) != -1)
 	{
 		switch (c)
 	    {
@@ -427,6 +429,9 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
 			case 's':
 				show_strings = TRUE;
 				break;
+
+            case 'S':
+                show_statistics = TRUE;
 			
 			case 'n':
     			negate = TRUE;
@@ -631,6 +636,43 @@ int main(int argc, char const* argv[])
 	{
 		yr_scan_file(argv[argc - 1], context, callback, (void*) argv[argc - 1]);
 	}
+
+    if (show_statistics)
+    {
+        int _2byte_count = 0;
+        int _1byte_count = 0;
+        int non_hashed_count = 0;
+        int i = 0;
+        int b2 = 0;
+        STRING_LIST_ENTRY* ptr = NULL;
+
+        // show hash table usage
+        for (i = 0; i < 256; i++) {
+            for (b2 = 0; b2 < 256; b2++) {
+                ptr = context->hash_table.hashed_strings_2b[i][b2];
+                while (ptr != NULL) {
+                    _2byte_count++;
+                    ptr = ptr->next;
+                }
+            }
+
+            ptr = context->hash_table.hashed_strings_1b[i];
+            while (ptr != NULL) {
+                _1byte_count++;
+                ptr = ptr->next;
+            }
+        }
+
+        ptr = context->hash_table.non_hashed_strings;
+        while (ptr != NULL) {
+            non_hashed_count++;
+            ptr = ptr->next;
+        }
+
+        printf("2-byte hashed count = %d\n", _2byte_count);
+        printf("1-byte hashed count = %d\n", _1byte_count);
+        printf("non-hashed count = %d\n", non_hashed_count);
+    }
 	
 	yr_destroy_context(context);
 	
