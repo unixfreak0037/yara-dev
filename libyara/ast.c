@@ -532,6 +532,8 @@ int new_string( YARA_CONTEXT* context,
         new_string->next = NULL;
         new_string->matches_head = NULL;
         new_string->matches_tail = NULL;
+        new_string->total_checks = 0;
+        new_string->total_time = 0;
         
         if (flags & STRING_FLAGS_HEXADECIMAL)
         {

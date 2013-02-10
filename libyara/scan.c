@@ -38,6 +38,11 @@ limitations under the License.
 #define inline __inline
 #endif
 
+#define START_MEASURE(TV_START) gettimeofday(&TV_START, NULL)
+#define STOP_MEASURE(STR, TV_START, TV_STOP) \
+    gettimeofday(&TV_STOP, NULL); \
+    STR->total_time += (((double)(TV_STOP.tv_sec) * 1000.0) + ((double)(TV_STOP.tv_usec) / 1000.0)) - \
+    (((double)(TV_START.tv_sec) * 1000.0) + ((double)(TV_START.tv_usec) / 1000.0))
 
 static char lowercase[256];
 static char altercase[256];
@@ -647,6 +652,10 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
     unsigned char tmp_buffer[512];
     unsigned char* tmp;
 
+    // for measuring performance
+    struct timeval tv_start, tv_stop;
+    double start, stop;
+
     // if the precondition failed for the rule this string is in
     // then nothing can possibly match
     if (string->rule->flags & RULE_FLAGS_FAILED_PRECONDITION)
@@ -654,10 +663,15 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
         //printf("skipping string %s in rule %s\n", string->identifier, string->rule->identifier);
         return 0;
     }
+
+    string->total_checks++;
+    START_MEASURE(tv_start);
     
     if (IS_HEX(string))
     {
-        return hex_match(buffer, buffer_size, string->string, string->length, string->mask);
+        match = hex_match(buffer, buffer_size, string->string, string->length, string->mask);
+        STOP_MEASURE(string, tv_start, tv_stop);
+        return match;
     }
     else if (IS_REGEXP(string)) 
     {
@@ -701,13 +715,16 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
                     yr_free(tmp);           
                 } 
                     
+                STOP_MEASURE(string, tv_start, tv_stop);
                 return match * 2;
             }
             
         }
         else
         {
-            return regexp_match(buffer, buffer_size, string->string, string->length, string->re, negative_size);   
+            match = regexp_match(buffer, buffer_size, string->string, string->length, string->re, negative_size);   
+            STOP_MEASURE(string, tv_start, tv_stop);
+            return match;
         }
     }
     
@@ -745,8 +762,10 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
             }
         }   
         
-        if (match > 0)
+        if (match > 0) {
+            STOP_MEASURE(string, tv_start, tv_stop);
             return match;
+        }
     }
     
     if ((flags & STRING_FLAGS_ASCII) && IS_ASCII(string) && string->length <= buffer_size)
@@ -772,6 +791,7 @@ inline int string_match(unsigned char* buffer, size_t buffer_size, STRING* strin
             }
         }
         
+        STOP_MEASURE(string, tv_start, tv_stop);
         return match;
     }
     

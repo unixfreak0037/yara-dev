@@ -142,6 +142,12 @@ typedef struct _STRING
     char*           identifier;
     unsigned int    length;
     unsigned char*  string;
+
+    // total number of times this string was checked
+    int             total_checks;
+    // total amount of time spent checking this string (in milliseconds)
+    double           total_time;
+    
     
     union {
         unsigned char*  mask;
