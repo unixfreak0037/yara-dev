@@ -45,8 +45,7 @@ int show_specified_tags = FALSE;
 int show_specified_rules = FALSE;
 int show_strings = FALSE;
 int show_meta = FALSE;
-int show_summary_statistics = FALSE;
-int show_detailed_statistics = FALSE;
+int show_statistics = FALSE;
 int negate = FALSE;
 int count = 0;
 int limit = 0;
@@ -76,8 +75,7 @@ void show_help()
 	printf("  -g                        print tags.\n");
 	printf("  -m                        print metadata.\n");
 	printf("  -s                        print matching strings.\n");
-	printf("  -S                        print summary statistics.\n");
-	printf("  -T                        print detailed statistics.\n");
+	printf("  -S                        print statistics.\n");
 	printf("  -l <number>               abort scanning after a <number> of rules matched.\n");
 	printf("  -d <identifier>=<value>   define external variable.\n");
     printf("  -r                        recursively search directories.\n");
@@ -408,7 +406,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
     IDENTIFIER* identifier;
 	opterr = 0;
  
-	while ((c = getopt (argc, (char**) argv, "rnsSTvgml:t:i:d:f")) != -1)
+	while ((c = getopt (argc, (char**) argv, "rnsSvgml:t:i:d:f")) != -1)
 	{
 		switch (c)
 	    {
@@ -433,12 +431,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
 				break;
 
             case 'S':
-                show_summary_statistics = TRUE;
-                break;
-
-            case 'T':
-                show_detailed_statistics = TRUE;
-                break;
+                show_statistics = TRUE;
 			
 			case 'n':
     			negate = TRUE;
@@ -644,7 +637,7 @@ int main(int argc, char const* argv[])
 		yr_scan_file(argv[argc - 1], context, callback, (void*) argv[argc - 1]);
 	}
 
-    if (show_summary_statistics || show_detailed_statistics)
+    if (show_statistics)
     {
         int _2byte_count = 0;
         int _1byte_count = 0;
@@ -652,8 +645,6 @@ int main(int argc, char const* argv[])
         int i = 0;
         int b2 = 0;
         STRING_LIST_ENTRY* ptr = NULL;
-        STRING * str = NULL;
-        RULE * rule = NULL;
 
         // show hash table usage
         for (i = 0; i < 256; i++) {
@@ -661,8 +652,6 @@ int main(int argc, char const* argv[])
                 ptr = context->hash_table.hashed_strings_2b[i][b2];
                 while (ptr != NULL) {
                     _2byte_count++;
-                    if (show_detailed_statistics)
-                        printf("2B:%s:%s\n", ptr->string->rule->identifier, ptr->string->identifier);
                     ptr = ptr->next;
                 }
             }
@@ -670,8 +659,6 @@ int main(int argc, char const* argv[])
             ptr = context->hash_table.hashed_strings_1b[i];
             while (ptr != NULL) {
                 _1byte_count++;
-                if (show_detailed_statistics)
-                    printf("1B:%s:%s\n", ptr->string->rule->identifier, ptr->string->identifier);
                 ptr = ptr->next;
             }
         }
@@ -679,27 +666,12 @@ int main(int argc, char const* argv[])
         ptr = context->hash_table.non_hashed_strings;
         while (ptr != NULL) {
             non_hashed_count++;
-            if (show_detailed_statistics)
-                printf("XX:%s:%s\n", ptr->string->rule->identifier, ptr->string->identifier);
             ptr = ptr->next;
         }
 
         printf("2-byte hashed count = %d\n", _2byte_count);
         printf("1-byte hashed count = %d\n", _1byte_count);
         printf("non-hashed count = %d\n", non_hashed_count);
-
-        printf("rule:string\tCOUNT\tMILLISECONDS\n");
-        rule = context->rule_list.head;
-        while (rule != NULL) {
-            str = rule->string_list_head;
-            while (str != NULL) {
-                if (show_detailed_statistics)
-                    printf("%s:%s\t%d\t%.2f\n", rule->identifier, str->identifier, str->total_checks, str->total_time);
-                str = str->next;
-            }
-
-            rule = rule->next;
-        }
     }
 	
 	yr_destroy_context(context);
