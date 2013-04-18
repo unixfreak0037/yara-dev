@@ -37,3 +37,5 @@ libyara/m4/libtool.m4
 ltmain.sh
 missing
 ylwrap
+libtool
+m4/
