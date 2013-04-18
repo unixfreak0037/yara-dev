@@ -28,3 +28,12 @@ libyara/stamp-h1
 stamp-h1
 test
 yara
+INSTALL
+config.guess
+config.sub
+depcomp
+install-sh
+libyara/m4/libtool.m4
+ltmain.sh
+missing
+ylwrap
