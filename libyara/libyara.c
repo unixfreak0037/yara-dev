@@ -32,6 +32,9 @@ limitations under the License.
 #define snprintf _snprintf
 #endif
 
+// thread sync
+pthread_mutex_t match_lock;
+
 void threaded_scan(void * args) {
 
     THREADED_SCAN_ARGS * tscan_args = (THREADED_SCAN_ARGS *)args;
@@ -574,6 +577,8 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	            eval_context.entry_point = get_entry_point_offset(block->data, block->size);
             }
         }
+
+        pthread_mutex_init(&match_lock, NULL);
 
         // array to store thread handles
         threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);

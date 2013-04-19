@@ -40,6 +40,8 @@ limitations under the License.
 #define inline __inline
 #endif
 
+// thread sync
+extern pthread_mutex_t match_lock;
 
 static char lowercase[256];
 static char altercase[256];
@@ -817,6 +819,8 @@ inline int find_matches_for_strings(   STRING_LIST_ENTRY* first_string,
                 match->next = NULL;
                 
                 memcpy(match->data, buffer, len);         
+
+                pthread_mutex_lock(&match_lock);
                 
                 if (string->matches_head == NULL)
                 {
@@ -829,6 +833,8 @@ inline int find_matches_for_strings(   STRING_LIST_ENTRY* first_string,
                 }
                 
                 string->matches_tail = match;
+
+                pthread_mutex_unlock(&match_lock);
             }
             else
             {
