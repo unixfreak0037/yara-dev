@@ -26,16 +26,62 @@ limitations under the License.
 #include "exe.h"
 #include "regex.h"
 #include "yara.h"
+#include "scan.h"
 
 #ifdef WIN32
 #define snprintf _snprintf
 #endif
 
+void threaded_scan(void * args) {
+
+    THREADED_SCAN_ARGS * tscan_args = (THREADED_SCAN_ARGS *)args;
+    int i;
+    int error;
+
+    MEMORY_BLOCK * block = tscan_args->block;
+    YARA_CONTEXT * context = tscan_args->context;
+
+    for (i = tscan_args->thread_index; i < block->size - 1; i += tscan_args->thread_count)
+    {		    
+        /* search for normal strings */	
+        error = find_matches(   block->data[i], 
+                                block->data[i + 1], 
+                                block->data + i, 
+                                block->size - i, 
+                                block->base + i, 
+                                STRING_FLAGS_HEXADECIMAL | STRING_FLAGS_ASCII, 
+                                i, 
+                                context);
+    
+        if (error != ERROR_SUCCESS)
+            pthread_exit(NULL);
+            //return error;
+    
+        /* search for wide strings */
+        if ((block->data[i + 1] == 0) && (block->size > 3) && (i < block->size - 3) && (block->data[i + 3] == 0))
+        {
+            error = find_matches(   block->data[i], 
+                                    block->data[i + 2], 
+                                    block->data + i, 
+                                    block->size - i, 
+                                    block->base + i, 
+                                    STRING_FLAGS_WIDE, 
+                                    i, 
+                                    context);
+        
+            if (error != ERROR_SUCCESS)
+                pthread_exit(NULL);
+                //return error;
+        }	
+    }
+
+    pthread_exit(NULL);
+}
+
 void yr_init()
 {
     yr_heap_alloc();
 }
-
 
 YARA_CONTEXT* yr_create_context()
 {
@@ -469,6 +515,10 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	RULE* rule;
 	NAMESPACE* ns;
 	EVALUATION_CONTEXT eval_context;
+
+    // thread variables
+    int thread_count = 1;
+    pthread_t * threads = NULL;
 	
 	if (block->size < 2)
         return ERROR_SUCCESS;
@@ -524,38 +574,32 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	            eval_context.entry_point = get_entry_point_offset(block->data, block->size);
             }
         }
-	    
-    	for (i = 0; i < block->size - 1; i++)
-    	{		    
-    		/* search for normal strings */	
-            error = find_matches(   block->data[i], 
-                                    block->data[i + 1], 
-                                    block->data + i, 
-                                    block->size - i, 
-                                    block->base + i, 
-                                    STRING_FLAGS_HEXADECIMAL | STRING_FLAGS_ASCII, 
-                                    i, 
-                                    context);
-		
-    		if (error != ERROR_SUCCESS)
-    		    return error;
-		
-    		/* search for wide strings */
-    		if ((block->data[i + 1] == 0) && (block->size > 3) && (i < block->size - 3) && (block->data[i + 3] == 0))
-    		{
-    			error = find_matches(   block->data[i], 
-    			                        block->data[i + 2], 
-    			                        block->data + i, 
-    			                        block->size - i, 
-    			                        block->base + i, 
-    			                        STRING_FLAGS_WIDE, 
-    			                        i, 
-    			                        context);
-			
-    			if (error != ERROR_SUCCESS)
-        		    return error;
-    		}	
-    	}
+
+        // array to store thread handles
+        threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
+
+        for (i = 0; i < thread_count; i++) 
+        {
+            THREADED_SCAN_ARGS * args = (THREADED_SCAN_ARGS *)malloc(sizeof(THREADED_SCAN_ARGS));
+            args->thread_index = i;
+            args->thread_count = thread_count;
+            args->block = block;
+            args->context = context;
+
+            //attr = pth_attr_new();
+            //pth_attr_set(attr, PTH_ATTR_NAME, "threaded_scanner");
+            //pth_attr_set(attr, PTH_ATTR_STACK_SIZE, 64 * 1024);
+            //pth_attr_set(attr, PTH_ATTR_JOINABLE, FALSE);
+            printf("launching thread %d\n", i);
+            pthread_create(&threads[i], NULL, threaded_scan, args);
+        }
+
+        // wait for all the threads to finish
+        for (i = 0; i < thread_count; i++)
+        {
+            printf("waiting for thread %d\n", i);
+            pthread_join(threads[i], NULL);
+        }
     	
         block = block->next;
     }
@@ -649,7 +693,6 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	
 	return ERROR_SUCCESS;
 }
-
 
 int yr_scan_mem(unsigned char* buffer, size_t buffer_size, YARA_CONTEXT* context, YARACALLBACK callback, void* user_data)
 {

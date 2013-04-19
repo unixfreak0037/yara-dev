@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <string.h>
+#include <pthread.h>
 #include <ctype.h>
 
 #include "filemap.h"
@@ -25,6 +26,7 @@ limitations under the License.
 #include "mem.h"
 #include "eval.h"
 #include "regex.h"
+#include "scan.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -841,17 +843,16 @@ inline int find_matches_for_strings(   STRING_LIST_ENTRY* first_string,
     return ERROR_SUCCESS;
 }
 
-
-int find_matches(   unsigned char first_char, 
-                    unsigned char second_char, 
-                    unsigned char* buffer, 
-                    size_t buffer_size, 
-                    size_t current_offset,
-                    int flags,
-                    int negative_size, 
-                    YARA_CONTEXT* context)
+int find_matches(
+    unsigned char first_char,
+    unsigned char second_char,
+    unsigned char* buffer,
+    size_t buffer_size,
+    size_t current_offset,
+    int flags,
+    int negative_size,
+    YARA_CONTEXT* context)
 {
-    
     int result = ERROR_SUCCESS;
         
     if (context->hash_table.hashed_strings_2b[first_char][second_char] != NULL)
