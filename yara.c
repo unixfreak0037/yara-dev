@@ -48,6 +48,7 @@ int show_meta = FALSE;
 int negate = FALSE;
 int count = 0;
 int limit = 0;
+extern int thread_count;
 
 
 TAG* specified_tags_list = NULL;
@@ -68,6 +69,7 @@ void show_help()
 {
     printf("usage:  yara [OPTION]... [RULEFILE]... FILE | PID\n");
     printf("options:\n");
+	printf("  -c <count>                cpu (thread) count (defaults to 1)\n");
 	printf("  -t <tag>                  print rules tagged as <tag> and ignore the rest. Can be used more than once.\n");
     printf("  -i <identifier>           print rules named <identifier> and ignore the rest. Can be used more than once.\n");
 	printf("  -n                        print only not satisfied rules (negate).\n");
@@ -404,7 +406,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
     IDENTIFIER* identifier;
 	opterr = 0;
  
-	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:f")) != -1)
+	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:fc:")) != -1)
 	{
 		switch (c)
 	    {
@@ -504,6 +506,11 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
 		        
 		    case 'l':	    
                 limit = atoi(optarg);
+                break;
+
+            case 'c':
+                thread_count = atoi(optarg);
+                printf("changed thread count to %d\n", thread_count);
                 break;
 	
 		    case '?':

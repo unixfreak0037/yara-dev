@@ -32,11 +32,12 @@ limitations under the License.
 #define snprintf _snprintf
 #endif
 
-// thread sync
+// global thread variables
 pthread_mutex_t match_lock;
+int thread_count = 1; // default to using a single cpu/core
 
-void threaded_scan(void * args) {
-
+void threaded_scan(void * args) 
+{
     THREADED_SCAN_ARGS * tscan_args = (THREADED_SCAN_ARGS *)args;
     int i;
     int error;
@@ -44,7 +45,7 @@ void threaded_scan(void * args) {
     MEMORY_BLOCK * block = tscan_args->block;
     YARA_CONTEXT * context = tscan_args->context;
 
-    for (i = tscan_args->thread_index; i < block->size - 1; i += tscan_args->thread_count)
+    for (i = tscan_args->thread_index; i < block->size - 1; i += thread_count)
     {		    
         /* search for normal strings */	
         error = find_matches(   block->data[i], 
@@ -505,7 +506,6 @@ int yr_compile_string(const char* rules_string, YARA_CONTEXT* context)
     return parse_rules_string(rules_string, context);
 }
 
-
 int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK callback, void* user_data)
 {
     int error;
@@ -520,7 +520,6 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 	EVALUATION_CONTEXT eval_context;
 
     // thread variables
-    int thread_count = 1;
     pthread_t * threads = NULL;
 	
 	if (block->size < 2)
@@ -579,6 +578,8 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
         }
 
         pthread_mutex_init(&match_lock, NULL);
+        
+        printf("thread count = %d\n", thread_count);
 
         // array to store thread handles
         threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
@@ -587,7 +588,6 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
         {
             THREADED_SCAN_ARGS * args = (THREADED_SCAN_ARGS *)malloc(sizeof(THREADED_SCAN_ARGS));
             args->thread_index = i;
-            args->thread_count = thread_count;
             args->block = block;
             args->context = context;
 

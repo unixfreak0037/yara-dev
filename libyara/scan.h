@@ -24,7 +24,6 @@ void clear_hash_table(HASH_TABLE* hash_table);
 
 typedef struct _THREADED_SCAN_ARGS {
     int thread_index;
-    int thread_count;
     MEMORY_BLOCK * block;
     YARA_CONTEXT * context;
 } THREADED_SCAN_ARGS;
