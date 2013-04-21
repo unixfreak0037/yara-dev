@@ -510,7 +510,6 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
 
             case 'c':
                 thread_count = atoi(optarg);
-                printf("changed thread count to %d\n", thread_count);
                 break;
 	
 		    case '?':

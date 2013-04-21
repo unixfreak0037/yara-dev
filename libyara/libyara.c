@@ -579,8 +579,6 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
 
         pthread_mutex_init(&match_lock, NULL);
         
-        printf("thread count = %d\n", thread_count);
-
         // array to store thread handles
         threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
 
@@ -595,14 +593,12 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
             //pth_attr_set(attr, PTH_ATTR_NAME, "threaded_scanner");
             //pth_attr_set(attr, PTH_ATTR_STACK_SIZE, 64 * 1024);
             //pth_attr_set(attr, PTH_ATTR_JOINABLE, FALSE);
-            printf("launching thread %d\n", i);
             pthread_create(&threads[i], NULL, threaded_scan, args);
         }
 
         // wait for all the threads to finish
         for (i = 0; i < thread_count; i++)
         {
-            printf("waiting for thread %d\n", i);
             pthread_join(threads[i], NULL);
         }
     	
