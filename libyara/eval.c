@@ -176,6 +176,9 @@ long long evaluate(TERM* term, EVALUATION_CONTEXT* context)
 		    
 			lo_bound = evaluate(range->min, context);
 			hi_bound = evaluate(range->max, context);
+
+            if (IS_UNDEFINED(lo_bound) || IS_UNDEFINED(hi_bound))
+                return 0;
 				
 			match = string->matches_head;
 
