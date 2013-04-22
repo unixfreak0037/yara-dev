@@ -582,7 +582,7 @@ int yr_scan_mem_blocks(MEMORY_BLOCK* block, YARA_CONTEXT* context, YARACALLBACK 
         // array to store thread handles
         threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
 
-        for (i = 0; i < thread_count; i++) 
+        for (i = 0; i < thread_count && i < block->size - 1; i++) 
         {
             THREADED_SCAN_ARGS * args = (THREADED_SCAN_ARGS *)malloc(sizeof(THREADED_SCAN_ARGS));
             args->thread_index = i;
