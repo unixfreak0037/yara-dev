@@ -1,4 +1,6 @@
 *.o
+*.lo
+*.la
 *.a
 yara
 INSTALL
@@ -39,3 +41,4 @@ libyara/regex/.deps/
 libyara/regex/Makefile
 libyara/stamp-h1
 stamp-h1
+libyara/.libs/
