@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+aclocal
+autoconf
+libtoolize
+autoheader
+automake --add-missing
+cd libyara
+aclocal
+autoconf
+libtoolize
+autoheader
+automake --add-missing
