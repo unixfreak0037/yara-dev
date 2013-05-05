@@ -16,6 +16,8 @@ AC_ARG_WITH([re2],
         	[re2=false]
         ])
 AM_CONDITIONAL([RE2], [test x$re2 = xtrue])
+AC_CHECK_LIB(pthread, pthread_create, ,
+    [AC_MSG_ERROR([required library pthread missing])])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_SUBDIRS([libyara])
