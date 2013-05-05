@@ -49,7 +49,7 @@ int negate = FALSE;
 int count = 0;
 int limit = 0;
 extern int thread_count;
-
+int compile_only = FALSE;
 
 TAG* specified_tags_list = NULL;
 
@@ -81,6 +81,7 @@ void show_help()
     printf("  -r                        recursively search directories.\n");
 	printf("  -f                        fast matching mode.\n");
 	printf("  -v                        show version information.\n");
+	printf("  -C                        only compile the specified rules to check for syntax errors.\n");
 	printf("\nReport bugs to: <%s>\n", PACKAGE_BUGREPORT);
 }
 
@@ -406,7 +407,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
     IDENTIFIER* identifier;
 	opterr = 0;
  
-	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:fc:")) != -1)
+	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:fc:C")) != -1)
 	{
 		switch (c)
 	    {
@@ -511,6 +512,10 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
             case 'c':
                 thread_count = atoi(optarg);
                 break;
+
+            case 'C':
+                compile_only = TRUE;
+                break;
 	
 		    case '?':
 	
@@ -564,16 +569,24 @@ int main(int argc, char const* argv[])
 		return 0;
 	}	
 		
-	if (argc == 1 || optind == argc)
+	if (argc == 1 || ((optind == argc) && (! compile_only)))
 	{
 	    yr_destroy_context(context);
 		show_help();
 		return 0;
 	}
+
+    // yara rule file
+    // yara file (rule is stdin)
+    // yara -C rule
+    // yara -C
+
+    // expected_argument_count = argc - 1
+    // if -C then expected_argument_count--
 	
 	context->error_report_function = report_error;	
 			
-	for (i = optind; i < argc - 1; i++)
+	for (i = optind; i < (compile_only ? argc : argc - 1); i++)
 	{
 		rule_file = fopen(argv[i], "r");
 		
@@ -581,6 +594,7 @@ int main(int argc, char const* argv[])
 		{
 			yr_push_file_name(context, argv[i]);
 			            			
+            //printf("compiling file %s\n", argv[i]);
 			errors = yr_compile_file(rule_file, context);
 			
 			fclose(rule_file);
@@ -588,16 +602,20 @@ int main(int argc, char const* argv[])
 			if (errors) /* errors during compilation */
 			{
 				yr_destroy_context(context);				
-				return 0;
+				return 2;
 			}
 		}
 		else
 		{
 			fprintf(stderr, "could not open file: %s\n", argv[i]);
+            if (compile_only)
+                return 2;
 		}
 	}
-	
-	if (optind == argc - 1)  /* no rule files, read rules from stdin */
+
+    //printf("optind = %d argc = %d\n", optind, argc);
+
+	if (optind == (compile_only ? argc : argc - 1))  /* no rule files, read rules from stdin */
 	{
 		yr_push_file_name(context, "stdin");
 		
@@ -609,6 +627,12 @@ int main(int argc, char const* argv[])
 			return 0;
 		}		
 	}
+
+    if (compile_only)
+    {
+        printf("syntax check OK\n");
+        return 0;
+    }
 			
 	if (is_numeric(argv[argc - 1]))
     {

@@ -720,7 +720,11 @@ int yr_scan_file(const char* file_path, YARA_CONTEXT* context, YARACALLBACK call
         yr_define_string_variable(context, PREDEFINED_VAR_FILE_PATH, file_path);
 		result = yr_scan_mem(mfile.data, mfile.size, context, callback, user_data);		
 		unmap_file(&mfile);
-	}
+	} 
+    else
+    {
+        fprintf(stderr, "unable to scan file %s error code %d\n", file_path, result);
+    }
 		
 	return result;
 }
