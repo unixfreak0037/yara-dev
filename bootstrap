@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# run this script to generate the ./configure script
+
 aclocal
 autoconf
 libtoolize
