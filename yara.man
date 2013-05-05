@@ -59,6 +59,9 @@ Scan files in directories recursively.
 .B \-f 
 Speeds up scanning by searching only for the first occurrence of each pattern.
 .TP
+.B \-C
+Only compile the rules.  Returns status code of 2 if compilation fails.
+.TP
 .B \-v 
 Show version information.
 .SH EXAMPLES
