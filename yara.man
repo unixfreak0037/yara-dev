@@ -23,6 +23,11 @@ Print rules tagged as
 .I tag
 and ignore the rest. This option can be used multiple times.
 .TP
+.BI \-c " number"
+Execute
+.I number
+threads to perform the scan.  Defaults to 1.
+.TP
 .BI \-i " identifier"
 Print rules named
 .I identifier
