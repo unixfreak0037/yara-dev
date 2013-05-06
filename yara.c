@@ -576,14 +576,6 @@ int main(int argc, char const* argv[])
 		return 0;
 	}
 
-    // yara rule file
-    // yara file (rule is stdin)
-    // yara -C rule
-    // yara -C
-
-    // expected_argument_count = argc - 1
-    // if -C then expected_argument_count--
-	
 	context->error_report_function = report_error;	
 			
 	for (i = optind; i < (compile_only ? argc : argc - 1); i++)
@@ -594,7 +586,6 @@ int main(int argc, char const* argv[])
 		{
 			yr_push_file_name(context, argv[i]);
 			            			
-            //printf("compiling file %s\n", argv[i]);
 			errors = yr_compile_file(rule_file, context);
 			
 			fclose(rule_file);
@@ -612,8 +603,6 @@ int main(int argc, char const* argv[])
                 return 2;
 		}
 	}
-
-    //printf("optind = %d argc = %d\n", optind, argc);
 
 	if (optind == (compile_only ? argc : argc - 1))  /* no rule files, read rules from stdin */
 	{
