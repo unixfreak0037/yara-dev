@@ -50,6 +50,9 @@ Abort scanning after a
 .I number
 of rules matched.
 .TP
+.BI \-L
+Scan each line by itself.
+.TP
 .BI \-d " identifier"=value
 Define an external variable. This option can be used multiple times.
 .TP

@@ -50,6 +50,7 @@ int count = 0;
 int limit = 0;
 extern int thread_count;
 int compile_only = FALSE;
+extern int scan_by_line;
 
 TAG* specified_tags_list = NULL;
 
@@ -77,6 +78,7 @@ void show_help()
 	printf("  -m                        print metadata.\n");
 	printf("  -s                        print matching strings.\n");
 	printf("  -l <number>               abort scanning after a <number> of rules matched.\n");
+	printf("  -L                        scan each line of input file(s) individually.\n");
 	printf("  -d <identifier>=<value>   define external variable.\n");
     printf("  -r                        recursively search directories.\n");
 	printf("  -f                        fast matching mode.\n");
@@ -407,7 +409,7 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
     IDENTIFIER* identifier;
 	opterr = 0;
  
-	while ((c = getopt (argc, (char**) argv, "rnsvgml:t:i:d:fc:C")) != -1)
+	while ((c = getopt (argc, (char**) argv, "rnsvgmLl:t:i:d:fc:C")) != -1)
 	{
 		switch (c)
 	    {
@@ -434,6 +436,10 @@ int process_cmd_line(YARA_CONTEXT* context, int argc, char const* argv[])
 			case 'n':
     			negate = TRUE;
     			break;
+
+            case 'L':
+                scan_by_line = TRUE;
+                break;
 
 			case 'f':
     			context->fast_match = TRUE;

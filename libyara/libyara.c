@@ -35,6 +35,7 @@ limitations under the License.
 // global thread variables
 pthread_mutex_t match_lock;
 int thread_count = 1; // default to using a single cpu/core
+int scan_by_line = FALSE;
 
 void threaded_scan(void * args) 
 {
@@ -707,18 +708,53 @@ int yr_scan_mem(unsigned char* buffer, size_t buffer_size, YARA_CONTEXT* context
     return yr_scan_mem_blocks(&block, context, callback, user_data);
 }
 
-
 int yr_scan_file(const char* file_path, YARA_CONTEXT* context, YARACALLBACK callback, void* user_data)
 {
 	MAPPED_FILE mfile;
 	int result;
+    char * start = NULL;
+    char * stop = NULL;
 
     result = map_file(file_path, &mfile);
 	
 	if (result == ERROR_SUCCESS)
 	{
         yr_define_string_variable(context, PREDEFINED_VAR_FILE_PATH, file_path);
-		result = yr_scan_mem(mfile.data, mfile.size, context, callback, user_data);		
+
+        // default is to scan the entire file
+        if (! scan_by_line)
+        {
+            result = yr_scan_mem(mfile.data, mfile.size, context, callback, user_data);
+            unmap_file(&mfile);
+            return result;
+        }
+
+        // otherwise we break it up by line
+        start = stop = mfile.data;
+        while (start < (mfile.data + mfile.size)) 
+        {
+            if (*stop == '\n' || *stop == '\r')
+            {
+                stop++;
+
+                // if this is \r\n then move ahead one more
+                if (stop < (mfile.data + mfile.size) && *(stop - 1) == '\r' && *stop == '\n')
+                    stop++;
+
+                // scan this much stuff
+                if ((stop - start) > 0)
+                {
+                    result = yr_scan_mem(start, stop - start, context, callback, user_data);
+                    if (result != ERROR_SUCCESS)
+                        break;
+
+                    start = stop;
+                }
+            }
+
+            stop++;
+        }
+
 		unmap_file(&mfile);
 	} 
     else
@@ -728,7 +764,6 @@ int yr_scan_file(const char* file_path, YARA_CONTEXT* context, YARACALLBACK call
 		
 	return result;
 }
-
 
 int yr_scan_proc(int pid, YARA_CONTEXT* context, YARACALLBACK callback, void* user_data)
 {
